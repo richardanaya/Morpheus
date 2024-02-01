@@ -45,6 +45,7 @@
         completeButton.disabled = false;
         textarea.disabled = false;
         lastLength = 0;
+        story.focus();
     });
 
     function escapeForJSONString(s) {
@@ -95,15 +96,16 @@
                 output.innerHTML = "...";
             }
             else if (role === "user") {
-                output.innerHTML += `<hr><span role="${role}">${line.content || ""}</span><br /><br />`;
+                // clicking link deletes parent dom element
+                output.innerHTML += `<div style="margin-top: 0.5rem"><hr><span role="${role}">${line.content || ""}</span><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /></div>`;
             } else {
-                output.innerHTML += `<b>${role}</b><hr><span role="${role}">${line.content || ""}</span><br /><br />`;
+                output.innerHTML += `<div style="margin-top: 0.5rem"><b>${role}</b><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><hr><span role="${role}">${line.content || ""}</span><br /></div>`;
             }
         })
         lastLength = text.length;
     }
 
-    textarea.focus();
+    story.focus();
 
     // ctrl + enter to complete
     textarea.addEventListener("keydown", (event) => {
