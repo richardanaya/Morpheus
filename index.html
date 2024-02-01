@@ -97,9 +97,9 @@
             }
             else if (role === "user") {
                 // clicking link deletes parent dom element
-                output.innerHTML += `<div style="margin-top: 0.5rem"><hr><span role="${role}">${line.content || ""}</span><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /></div>`;
+                output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${role}">${line.content || ""}</span></div>`;
             } else {
-                output.innerHTML += `<div style="margin-top: 0.5rem"><b>${role}</b><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><hr><span role="${role}">${line.content || ""}</span><br /></div>`;
+                output.innerHTML += `<div style="margin-top: 1rem"><b>${role}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${role}">${line.content || ""}</span><br /></div>`;
             }
         })
         lastLength = text.length;
@@ -177,6 +177,7 @@ ASSISTANT:[
                     if (firstChunk) {
                         firstChunk = false;
                         textarea.value = "";
+                        textarea.disabled = false;
                     }
                     accumulatedChunks = accumulatedChunks + chunk;
 
@@ -193,7 +194,6 @@ ASSISTANT:[
             // scroll to bottom of page when completely done and un-disable entry
             window.scrollTo(0, document.body.scrollHeight);
             completeButton.disabled = false;
-            textarea.disabled = false;
         }
     });
 </script>
