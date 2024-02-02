@@ -26,6 +26,7 @@
           top: 4rem;
           width: 2rem;
           cursor: pointer;
+          display: none;
         "
       />
       <p
@@ -53,7 +54,7 @@
         placeholder="ＣＯＮＴＥＸＴ ..."
       />
       <textarea
-        style="font-size: 16px"
+        style="font-size: 16px; font-family: sans-serif"
         placeholder="ＭＥＳＳＡＧＥ ..."
         autocomplete="off"
         autocorrect="off"
@@ -84,7 +85,13 @@
 
     let lastLength = 0;
     resetButton.addEventListener("pointerdown", () => {
-      output.innerHTML = "";
+      output.innerHTML = `<img
+          src="./morpheus.png"
+          style="width: 8rem; margin: 0 auto; display: block; box-shadow: none"
+        />
+        <title style="text-align: center; display: block">
+          ＭＯＲＰＨＥＵＳ
+        </title>`;
       story.value = "";
       textarea.value = "";
       // enable
@@ -250,6 +257,7 @@ ASSISTANT:[
         window.scrollTo(0, document.body.scrollHeight);
         completeButton.disabled = false;
         completeButton.style.backgroundColor = "#fff";
+        resetButton.style.display = "block";
       }
     });
   </script>
