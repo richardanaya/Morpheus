@@ -12,6 +12,7 @@
         padding: 0;
       }
     </style>
+    <script src="./dompurify.js"></script>
   </head>
 
   <body>
@@ -82,6 +83,10 @@
     const textarea = document.querySelector("textarea");
     const completeButton = document.getElementById("send");
     const resetButton = document.getElementById("reset");
+
+    function sanitize(str) {
+      return DOMPurify.sanitize(str, { ALLOWED_TAGS: ["b", "i", "p"] });
+    }
 
     let lastLength = 0;
     resetButton.addEventListener("pointerdown", () => {
@@ -154,13 +159,15 @@
           output.innerHTML = "...";
         } else if (role === "user") {
           // clicking link deletes parent dom element
-          output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${role}">${
-            line.content || ""
-          }</span></div>`;
+          output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${sanitize(
+            role
+          )}">${sanitize(line.content) || ""}</span></div>`;
         } else {
-          output.innerHTML += `<div style="margin-top: 1rem"><b>${role}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${role}">${
-            line.content || ""
-          }</span><br /></div>`;
+          output.innerHTML += `<div style="margin-top: 1rem"><b>${sanitize(
+            role
+          )}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${sanitize(
+            role
+          )}">${sanitize(line.content) || ""}</span><br /></div>`;
         }
       });
       lastLength = text.length;
