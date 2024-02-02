@@ -1,4 +1,1 @@
-# Morpheus
-
-![image](https://github.com/richardanaya/Morpheus/assets/294042/3f43c7e6-9dc6-4a14-b6eb-e6c1a46a5ff4)
-
+![image](https://github.com/richardanaya/Morpheus/assets/294042/78a4806c-c43a-4f74-bbd1-3f8b21feefc7)
