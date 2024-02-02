@@ -1,35 +1,75 @@
 <html>
-
-<head>
+  <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta charset="UTF-8">
-    <title>Morpheus</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8" />
+    <title>ＭＯＲＰＨＥＵＳ</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
     <style>
-        content,
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-        }
+      content,
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <card style="margin-bottom: 2rem">
-        <button id="reset" full>Reset</button>
-        <p id="output" style="font-size: 10px">
-
-        </p>
+      <img
+        id="reset"
+        src="./pencil.png"
+        style="
+          position: absolute;
+          z-index: 1000;
+          right: 2rem;
+          top: 4rem;
+          width: 2rem;
+          cursor: pointer;
+        "
+      />
+      <p
+        id="output"
+        style="
+          font-size: 10px;
+          display: block;
+          min-height: 3rem;
+          margin-top: 4rem;
+          margin-bottom: 4rem;
+          font-size: 16px;
+        "
+      >
+        <span style="text-align: center; display: block">ＭＯＲＰＨＥＵＳ</span>
+      </p>
+      <input
+        type="text"
+        style="font-size: 16px"
+        placeholder="ＣＯＮＴＥＸＴ ..."
+      />
+      <textarea
+        style="font-size: 16px"
+        placeholder="ＭＥＳＳＡＧＥ ..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      ></textarea>
+      <div style="text-align: center; box-shadow: none">
+        <img
+          id="send"
+          src="./brain.png"
+          style="
+            width: 4rem;
+            cursor: pointer;
+            box-shadow: none;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+          "
+        />
+      </div>
     </card>
-    <card style="margin-top: 0rem">
-        <input type="text" style="font-size: 16px" placeholder="Context ..."></textarea>
-        <textarea style="font-size: 16px" placeholder="Message ..." autocomplete="off" autocorrect="off"
-            autocapitalize="off" spellcheck="false"></textarea>
-        <button id="send" full>Send</button>
-    </card>
-</body>
-<script>
+  </body>
+  <script>
     const output = document.getElementById("output");
     const story = document.querySelector("input");
     const textarea = document.querySelector("textarea");
@@ -37,91 +77,100 @@
     const resetButton = document.getElementById("reset");
 
     let lastLength = 0;
-    resetButton.addEventListener("click", () => {
-        output.innerHTML = "";
-        story.value = "";
-        textarea.value = "";
-        // enable
-        completeButton.disabled = false;
-        textarea.disabled = false;
-        lastLength = 0;
-        story.focus();
+    resetButton.addEventListener("pointerdown", () => {
+      output.innerHTML = "";
+      story.value = "";
+      textarea.value = "";
+      // enable
+      completeButton.disabled = false;
+      textarea.disabled = false;
+      lastLength = 0;
+      story.focus();
     });
 
     function escapeForJSONString(s) {
-        return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+      return s
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/\t/g, "\\t");
     }
 
     function createChat(text) {
-        if (text.length <= lastLength) {
-            return;
-        }
-        let parts = text.split("ASSISTANT:");
-        if (parts.length < 2) {
-            return;
-        }
-        const json = parts[1].trim();
+      if (text.length <= lastLength) {
+        return;
+      }
+      let parts = text.split("ASSISTANT:");
+      if (parts.length < 2) {
+        return;
+      }
+      const json = parts[1].trim();
 
-        // try to finish the json first as is
-        let currentJSON = undefined;
+      // try to finish the json first as is
+      let currentJSON = undefined;
+      try {
+        currentJSON = JSON.parse(json);
+      } catch (e) {
         try {
-            currentJSON = JSON.parse(json);
+          currentJSON = JSON.parse(json + `"}]`);
         } catch (e) {
-            try {
-                currentJSON = JSON.parse(json + `"}]`);
-            } catch (e) {
-                try {
-                    currentJSON = JSON.parse(json + `}]`);
-                } catch (e) {
-                    //console.log("Couldn't complete \n\n" + e + "\n\n" + json);
-                }
-            }
+          try {
+            currentJSON = JSON.parse(json + `}]`);
+          } catch (e) {
+            //console.log("Couldn't complete \n\n" + e + "\n\n" + json);
+          }
         }
+      }
 
-        if (!currentJSON) {
-            return;
+      if (!currentJSON) {
+        return;
+      }
+
+      // <b>Player</b>
+      // <hr>Hello, World!
+      // <br />
+      // <br />
+
+      // lets write this html into output
+      output.innerHTML = "";
+
+      currentJSON.forEach((line) => {
+        const role = line.role || "...";
+        if (role === undefined) {
+          output.innerHTML = "...";
+        } else if (role === "user") {
+          // clicking link deletes parent dom element
+          output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${role}">${
+            line.content || ""
+          }</span></div>`;
+        } else {
+          output.innerHTML += `<div style="margin-top: 1rem"><b>${role}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${role}">${
+            line.content || ""
+          }</span><br /></div>`;
         }
-
-        // <b>Player</b>
-        // <hr>Hello, World!
-        // <br />
-        // <br />
-
-        // lets write this html into output
-        output.innerHTML = "";
-
-        currentJSON.forEach((line) => {
-            const role = line.role || "...";
-            if (role === undefined) {
-                output.innerHTML = "...";
-            }
-            else if (role === "user") {
-                // clicking link deletes parent dom element
-                output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${role}">${line.content || ""}</span></div>`;
-            } else {
-                output.innerHTML += `<div style="margin-top: 1rem"><b>${role}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${role}">${line.content || ""}</span><br /></div>`;
-            }
-        })
-        lastLength = text.length;
+      });
+      lastLength = text.length;
     }
 
     story.focus();
 
     // ctrl + enter to complete
     textarea.addEventListener("keydown", (event) => {
-        if (event.ctrlKey && event.key === "Enter") {
-            completeButton.click();
-        }
+      if (event.ctrlKey && event.key === "Enter") {
+        completeButton.click();
+      }
     });
 
-    completeButton.addEventListener("click", async () => {
-        completeButton.disabled = true;
-        textarea.disabled = true;
+    completeButton.addEventListener("pointerdown", async () => {
+      completeButton.disabled = true;
+      completeButton.style.backgroundColor = "#ccc";
+      textarea.disabled = true;
 
-        const spans = Array.from(output.querySelectorAll("span"));
+      const spans = Array.from(output.querySelectorAll("span"));
 
-        const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The story premise is as follows: ${story.value}`;
-        let body = `USER: ${premise} 
+      const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The story premise is as follows: ${story.value}`;
+      let body = `USER: ${premise} 
 
 ASSISTANT:[
     {
@@ -131,71 +180,71 @@ ASSISTANT:[
         "last_line": true,
         "role": "`;
 
-        if (spans.length > 0) {
-            body = `USER: ${premise}
+      if (spans.length > 0) {
+        body = `USER: ${premise}
 ASSISTANT:[
-    ${spans.map(_ => {
-                return `{
+    ${spans
+      .map((_) => {
+        return `{
         "role": "${escapeForJSONString(_.getAttribute("role"))}",
         "content": "${escapeForJSONString(_.innerText)}"
     }`;
-            }).join(",")}, {
+      })
+      .join(",")}, {
         "role": "user",
         "content": "${escapeForJSONString(textarea.value)}"
     }, {
         "last_line": true,
         "role": "`;
+      }
 
+      try {
+        const response = await fetch("/api/completion", {
+          method: "POST",
+          body,
+        });
+
+        if (!response.body) {
+          throw new Error("ReadableStream not supported in this browser.");
         }
 
-        try {
-            const response = await fetch("/api/completion", {
-                method: "POST",
-                body,
-            });
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-            if (!response.body) {
-                throw new Error("ReadableStream not supported in this browser.");
+        let firstChunk = true;
+        let accumulatedChunks = "";
+        while (true) {
+          const { value, done } = await reader.read();
+
+          if (done) {
+            break;
+          }
+
+          const chunks = decoder.decode(value, { stream: true });
+
+          // Process each character in the chunk
+          for (let chunk of chunks) {
+            if (firstChunk) {
+              firstChunk = false;
+              textarea.value = "";
+              textarea.disabled = false;
             }
+            accumulatedChunks = accumulatedChunks + chunk;
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
-            let firstChunk = true;
-            let accumulatedChunks = "";
-            while (true) {
-                const { value, done } = await reader.read();
-
-                if (done) {
-                    break;
-                }
-
-                const chunks = decoder.decode(value, { stream: true });
-
-                // Process each character in the chunk
-                for (let chunk of chunks) {
-                    if (firstChunk) {
-                        firstChunk = false;
-                        textarea.value = "";
-                        textarea.disabled = false;
-                    }
-                    accumulatedChunks = accumulatedChunks + chunk;
-
-                    // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
-                    // use regex to replace all instances of 3 or more newlines with 2 newlines
-                    // this is a basic cleanup good for almost all use cases
-                    const regex = /(\n{3,})/g;
-                    createChat(accumulatedChunks.replace(regex, "\n\n").trimStart());
-                }
-            }
-        } catch (e) {
-
-        } finally {
-            // scroll to bottom of page when completely done and un-disable entry
-            window.scrollTo(0, document.body.scrollHeight);
-            completeButton.disabled = false;
+            // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
+            // use regex to replace all instances of 3 or more newlines with 2 newlines
+            // this is a basic cleanup good for almost all use cases
+            const regex = /(\n{3,})/g;
+            createChat(accumulatedChunks.replace(regex, "\n\n").trimStart());
+          }
         }
+      } catch (e) {
+      } finally {
+        // scroll to bottom of page when completely done and un-disable entry
+        window.scrollTo(0, document.body.scrollHeight);
+        completeButton.disabled = false;
+        completeButton.style.backgroundColor = "#fff";
+      }
     });
-</script>
-
+  </script>
 </html>
