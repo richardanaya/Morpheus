@@ -171,7 +171,7 @@
     // ctrl + enter to complete
     textarea.addEventListener("keydown", (event) => {
       if (event.ctrlKey && event.key === "Enter") {
-        completeButton.click();
+        completeButton.dispatchEvent(new PointerEvent("pointerdown"));
       }
     });
 
