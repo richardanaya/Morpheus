@@ -1,6 +1,8 @@
 import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
 
+let lastLength = 0;
+
 function sanitize(str) {
   return DOMPurify.sanitize(str);
 }
@@ -10,6 +12,12 @@ function md(md) {
   //make DOM
   let dom = new DOMParser().parseFromString(domStr, "text/html");
   return dom.body.childNodes;
+}
+
+function deleteChatItem(e) {
+  const p = e.target.parentElement;
+  p.remove();
+  lastLength = 0;
 }
 
 function escapeForJSONString(s) {
@@ -26,8 +34,6 @@ const story = document.querySelector("input");
 const textarea = document.querySelector("textarea");
 const completeButton = document.getElementById("send");
 const resetButton = document.getElementById("reset");
-
-let lastLength = 0;
 
 const reset = () => {
   render(
@@ -90,12 +96,7 @@ function createChat(text) {
       } else {
         return html`<div style="margin-top: 1rem">
           <b>${sanitize(role)}</b
-          ><a
-            href="#"
-            style="float:right"
-            onclick="this.parentElement.remove();"
-            >delete</a
-          >
+          ><a href="#" style="float:right" @click="${deleteChatItem}">delete</a>
           <hr style="margin:0" />
           <span role="${sanitize(role)}">${md(line.content) || ""}</span><br />
         </div>`;
@@ -144,7 +145,7 @@ const startCompletion = async () => {
   }
 
   try {
-    const response = await fetch("/api/completion", {
+    const response = await fetch("https://192.168.86.195/api/completion", {
       method: "POST",
       body,
     });
