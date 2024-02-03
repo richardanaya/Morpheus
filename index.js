@@ -70,7 +70,7 @@ function createChat(text) {
       try {
         currentJSON = JSON.parse(json + `}]`);
       } catch (e) {
-        console.log("Couldn't complete \n\n" + e + "\n\n" + json);
+        // console.log("Couldn't complete \n\n" + e + "\n\n" + json);
       }
     }
   }
