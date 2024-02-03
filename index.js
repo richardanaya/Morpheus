@@ -145,7 +145,7 @@ const startCompletion = async () => {
   }
 
   try {
-    const response = await fetch("https://192.168.86.195/api/completion", {
+    const response = await fetch("/api/completion", {
       method: "POST",
       body,
     });
