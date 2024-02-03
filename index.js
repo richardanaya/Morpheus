@@ -2,29 +2,14 @@ import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
 
 function sanitize(str) {
-  return DOMPurify.sanitize(str, {
-    allow: [
-      "b",
-      "i",
-      "p",
-      "ul",
-      "li",
-      "ol",
-      "hr",
-      "br",
-      "table",
-      "tr",
-      "td",
-      "th",
-    ],
-  });
+  return DOMPurify.sanitize(str);
 }
 
 function md(md) {
   let domStr = sanitize(converter.makeHtml(md));
   //make DOM
   let dom = new DOMParser().parseFromString(domStr, "text/html");
-  return dom.body.firstChild;
+  return dom.body.childNodes;
 }
 
 function escapeForJSONString(s) {
@@ -85,7 +70,7 @@ function createChat(text) {
       try {
         currentJSON = JSON.parse(json + `}]`);
       } catch (e) {
-        //console.log("Couldn't complete \n\n" + e + "\n\n" + json);
+        console.log("Couldn't complete \n\n" + e + "\n\n" + json);
       }
     }
   }
@@ -129,7 +114,7 @@ const startCompletion = async () => {
 
   const spans = Array.from(output.querySelectorAll("span"));
 
-  const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only. The story premise is as follows: ${story.value}`;
+  const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${story.value}`;
   let body = `USER: ${premise}
   
       ASSISTANT:[
@@ -159,7 +144,7 @@ const startCompletion = async () => {
   }
 
   try {
-    const response = await fetch("https://192.168.86.195/api/completion", {
+    const response = await fetch("/api/completion", {
       method: "POST",
       body,
     });
