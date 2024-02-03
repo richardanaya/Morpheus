@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,6 +14,7 @@
       }
     </style>
     <script src="./dompurify.js"></script>
+    <script src="./showdown.js"></script>
   </head>
 
   <body>
@@ -40,15 +42,7 @@
           margin-bottom: 4rem;
           font-size: 16px;
         "
-      >
-        <img
-          src="./morpheus.png"
-          style="width: 8rem; margin: 0 auto; display: block; box-shadow: none"
-        />
-        <title style="text-align: center; display: block">
-          ＭＯＲＰＨＥＵＳ
-        </title>
-      </p>
+      ></p>
       <input
         type="text"
         style="font-size: 16px"
@@ -77,195 +71,5 @@
       </div>
     </card>
   </body>
-  <script>
-    const output = document.getElementById("output");
-    const story = document.querySelector("input");
-    const textarea = document.querySelector("textarea");
-    const completeButton = document.getElementById("send");
-    const resetButton = document.getElementById("reset");
-
-    function sanitize(str) {
-      return DOMPurify.sanitize(str, { ALLOWED_TAGS: ["b", "i", "p"] });
-    }
-
-    let lastLength = 0;
-    resetButton.addEventListener("pointerdown", () => {
-      output.innerHTML = `<img
-          src="./morpheus.png"
-          style="width: 8rem; margin: 0 auto; display: block; box-shadow: none"
-        />
-        <title style="text-align: center; display: block">
-          ＭＯＲＰＨＥＵＳ
-        </title>`;
-      story.value = "";
-      textarea.value = "";
-      // enable
-      completeButton.disabled = false;
-      textarea.disabled = false;
-      lastLength = 0;
-      story.focus();
-    });
-
-    function escapeForJSONString(s) {
-      return s
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"')
-        .replace(/\n/g, "\\n")
-        .replace(/\r/g, "\\r")
-        .replace(/\t/g, "\\t");
-    }
-
-    function createChat(text) {
-      if (text.length <= lastLength) {
-        return;
-      }
-      let parts = text.split("ASSISTANT:");
-      if (parts.length < 2) {
-        return;
-      }
-      const json = parts[1].trim();
-
-      // try to finish the json first as is
-      let currentJSON = undefined;
-      try {
-        currentJSON = JSON.parse(json);
-      } catch (e) {
-        try {
-          currentJSON = JSON.parse(json + `"}]`);
-        } catch (e) {
-          try {
-            currentJSON = JSON.parse(json + `}]`);
-          } catch (e) {
-            //console.log("Couldn't complete \n\n" + e + "\n\n" + json);
-          }
-        }
-      }
-
-      if (!currentJSON) {
-        return;
-      }
-
-      // <b>Player</b>
-      // <hr>Hello, World!
-      // <br />
-      // <br />
-
-      // lets write this html into output
-      output.innerHTML = "";
-
-      currentJSON.forEach((line) => {
-        const role = line.role || "...";
-        if (role === undefined) {
-          output.innerHTML = "...";
-        } else if (role === "user") {
-          // clicking link deletes parent dom element
-          output.innerHTML += `<div style="margin-top: 1rem"><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><br /><span role="${sanitize(
-            role
-          )}">${sanitize(line.content) || ""}</span></div>`;
-        } else {
-          output.innerHTML += `<div style="margin-top: 1rem"><b>${sanitize(
-            role
-          )}</b><hr style="margin:0"><a href="#" style="float:right" onclick="this.parentElement.remove();">delete</a><span role="${sanitize(
-            role
-          )}">${sanitize(line.content) || ""}</span><br /></div>`;
-        }
-      });
-      lastLength = text.length;
-    }
-
-    story.focus();
-
-    // ctrl + enter to complete
-    textarea.addEventListener("keydown", (event) => {
-      if (event.ctrlKey && event.key === "Enter") {
-        completeButton.dispatchEvent(new PointerEvent("pointerdown"));
-      }
-    });
-
-    completeButton.addEventListener("pointerdown", async () => {
-      completeButton.disabled = true;
-      completeButton.style.backgroundColor = "#ccc";
-      textarea.disabled = true;
-
-      const spans = Array.from(output.querySelectorAll("span"));
-
-      const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The story premise is as follows: ${story.value}`;
-      let body = `USER: ${premise} 
-
-ASSISTANT:[
-    {
-        "role": "user",
-        "content": "${escapeForJSONString(textarea.value)}"
-    }, {
-        "last_line": true,
-        "role": "`;
-
-      if (spans.length > 0) {
-        body = `USER: ${premise}
-ASSISTANT:[
-    ${spans
-      .map((_) => {
-        return `{
-        "role": "${escapeForJSONString(_.getAttribute("role"))}",
-        "content": "${escapeForJSONString(_.innerText)}"
-    }`;
-      })
-      .join(",")}, {
-        "role": "user",
-        "content": "${escapeForJSONString(textarea.value)}"
-    }, {
-        "last_line": true,
-        "role": "`;
-      }
-
-      try {
-        const response = await fetch("/api/completion", {
-          method: "POST",
-          body,
-        });
-
-        if (!response.body) {
-          throw new Error("ReadableStream not supported in this browser.");
-        }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        let firstChunk = true;
-        let accumulatedChunks = "";
-        while (true) {
-          const { value, done } = await reader.read();
-
-          if (done) {
-            break;
-          }
-
-          const chunks = decoder.decode(value, { stream: true });
-
-          // Process each character in the chunk
-          for (let chunk of chunks) {
-            if (firstChunk) {
-              firstChunk = false;
-              textarea.value = "";
-              textarea.disabled = false;
-            }
-            accumulatedChunks = accumulatedChunks + chunk;
-
-            // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
-            // use regex to replace all instances of 3 or more newlines with 2 newlines
-            // this is a basic cleanup good for almost all use cases
-            const regex = /(\n{3,})/g;
-            createChat(accumulatedChunks.replace(regex, "\n\n").trimStart());
-          }
-        }
-      } catch (e) {
-      } finally {
-        // scroll to bottom of page when completely done and un-disable entry
-        window.scrollTo(0, document.body.scrollHeight);
-        completeButton.disabled = false;
-        completeButton.style.backgroundColor = "#fff";
-        resetButton.style.display = "block";
-      }
-    });
-  </script>
+  <script type="module" src="./index.js"></script>
 </html>
