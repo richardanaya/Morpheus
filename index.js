@@ -159,10 +159,10 @@ ${userText}<|im_end|>`
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder('utf-8');
 
     let firstChunk = true;
-    let accumulatedChunks = "";
+    let accumulatedBytes = new Uint8Array(); 
     while (true) {
       const { value, done } = await reader.read();
 
@@ -170,23 +170,26 @@ ${userText}<|im_end|>`
         break;
       }
 
-      const chunks = decoder.decode(value, { stream: true });
+      const newBytes = new Uint8Array(
+        accumulatedBytes.length + value.length
+      );  
+      newBytes.set(accumulatedBytes);
+      newBytes.set(value, accumulatedBytes.length);
 
-      // Process each character in the chunk
-      for (let chunk of chunks) {
-        if (firstChunk) {
-          firstChunk = false;
-          textarea.value = "";
-          textarea.disabled = false;
-        }
-        accumulatedChunks = accumulatedChunks + chunk;
+      accumulatedBytes = newBytes;
 
+      if (firstChunk) {
+        firstChunk = false;
+        textarea.value = "";
+        textarea.disabled = false;
+      }
+
+      const text = decoder.decode(accumulatedBytes);
         // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
         // use regex to replace all instances of 3 or more newlines with 2 newlines
         // this is a basic cleanup good for almost all use cases
         const regex = /(\n{3,})/g;
-        createChat(accumulatedChunks.replace(regex, "\n\n").trimStart());
-      }
+        createChat(text.replace(regex, "\n\n").trimStart());
     }
   } catch (e) {
   } finally {
