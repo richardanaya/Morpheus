@@ -20,13 +20,8 @@ function deleteChatItem(e) {
   lastLength = 0;
 }
 
-function escapeForJSONString(s) {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r")
-    .replace(/\t/g, "\\t");
+function prepareUserText(s) {
+  return s.trim();
 }
 
 const output = document.getElementById("output");
@@ -57,7 +52,8 @@ const reset = () => {
 
 function parseChatML(chatmlString) {
   // Regular expression with generic role capture
-  const pattern = /<\|im_start\|>(?<role>.+?)\r\n(?<content>[\s\S]+?)<\|im_end\|>/gm;
+  const pattern =
+    /<\|im_start\|>(?<role>.+?)\r\n(?<content>[\s\S]+?)<\|im_end\|>/gm;
 
   const conversation = [];
 
@@ -66,7 +62,7 @@ function parseChatML(chatmlString) {
     if (match.groups.role !== "system") {
       conversation.push({
         role: match.groups.role,
-        content: match.groups.content
+        content: match.groups.content,
       });
     }
   }
@@ -74,12 +70,14 @@ function parseChatML(chatmlString) {
   return conversation;
 }
 
-
 function createChat(text) {
   // try to finish the json first as is
   let currentJSON = parseChatML(text);
   // if last isn't assistant
-  if (currentJSON.length > 0 && currentJSON[currentJSON.length - 1].role !== "assistant") {
+  if (
+    currentJSON.length > 0 &&
+    currentJSON[currentJSON.length - 1].role !== "assistant"
+  ) {
     currentJSON = parseChatML(text + `<|im_end|>`);
     if (currentJSON.length === 0) {
       return;
@@ -91,6 +89,8 @@ function createChat(text) {
       let role = line.role || "...";
       if (role === "user") {
         role = "You";
+      } else if (role === "assistant") {
+        role = "Them";
       }
       if (role === undefined) {
         return "...";
@@ -117,10 +117,15 @@ const startCompletion = async () => {
   const spans = Array.from(output.querySelectorAll("span"));
 
   const premise = `${story.value}`;
+  const userText = prepareUserText(textarea.value);
   let body = `<|im_start|>system
-${premise}<|im_end|>
+${premise}<|im_end|>${
+    userText !== ""
+      ? `
 <|im_start|>user
-${escapeForJSONString(textarea.value)}<|im_end|>
+${userText}<|im_end|>`
+      : ""
+  }
 <|im_start|>assistant
 `;
 
@@ -128,12 +133,17 @@ ${escapeForJSONString(textarea.value)}<|im_end|>
     body = `<|im_start|>system
 ${premise}<|im_end|>
 ${spans
-        .map((_) => {
-          return `<|im_start|>${escapeForJSONString(_.getAttribute("role"))}
-${escapeForJSONString(_.innerText)}<|im_end|>`
-        }).join("")}
+  .map((_) => {
+    return `<|im_start|>${prepareUserText(_.getAttribute("role"))}
+${prepareUserText(_.innerText)}<|im_end|>`;
+  })
+  .join("")}${
+      userText !== ""
+        ? `
 <|im_start|>user
-${escapeForJSONString(textarea.value)}<|im_end|>
+${userText}<|im_end|>`
+        : ""
+    }
 <|im_start|>assistant
 `;
   }
