@@ -55,34 +55,35 @@ const reset = () => {
   story.focus();
 };
 
-function createChat(text) {
-  if (text.length <= lastLength) {
-    return;
-  }
-  let parts = text.split("ASSISTANT:");
-  if (parts.length < 2) {
-    return;
-  }
-  const json = parts[1].trim();
+function parseChatML(chatmlString) {
+  // Regular expression with generic role capture
+  const pattern = /<\|im_start\|>(?<role>.+?)\r\n(?<content>[\s\S]+?)<\|im_end\|>/gm;
 
-  // try to finish the json first as is
-  let currentJSON = undefined;
-  try {
-    currentJSON = JSON.parse(json);
-  } catch (e) {
-    try {
-      currentJSON = JSON.parse(json + `"}]`);
-    } catch (e) {
-      try {
-        currentJSON = JSON.parse(json + `}]`);
-      } catch (e) {
-        // console.log("Couldn't complete \n\n" + e + "\n\n" + json);
-      }
+  const conversation = [];
+
+  let match;
+  while ((match = pattern.exec(chatmlString)) !== null) {
+    if (match.groups.role !== "system") {
+      conversation.push({
+        role: match.groups.role,
+        content: match.groups.content
+      });
     }
   }
 
-  if (!currentJSON) {
-    return;
+  return conversation;
+}
+
+
+function createChat(text) {
+  // try to finish the json first as is
+  let currentJSON = parseChatML(text);
+  // if last isn't assistant
+  if (currentJSON.length > 0 && currentJSON[currentJSON.length - 1].role !== "assistant") {
+    currentJSON = parseChatML(text + `<|im_end|>`);
+    if (currentJSON.length === 0) {
+      return;
+    }
   }
 
   render(
@@ -115,33 +116,26 @@ const startCompletion = async () => {
 
   const spans = Array.from(output.querySelectorAll("span"));
 
-  const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${story.value}`;
-  let body = `USER: ${premise}
-  
-      ASSISTANT:[
-          {
-              "role": "user",
-              "content": "${escapeForJSONString(textarea.value)}"
-          }, {
-              "last_line": true,
-              "role": "`;
+  const premise = `${story.value}`;
+  let body = `<|im_start|>system
+${premise}<|im_end|>
+<|im_start|>user
+${escapeForJSONString(textarea.value)}<|im_end|>
+<|im_start|>assistant
+`;
 
   if (spans.length > 0) {
-    body = `USER: ${premise}
-      ASSISTANT:[
-          ${spans
-            .map((_) => {
-              return `{
-              "role": "${escapeForJSONString(_.getAttribute("role"))}",
-              "content": "${escapeForJSONString(_.innerText)}"
-          }`;
-            })
-            .join(",")}, {
-              "role": "user",
-              "content": "${escapeForJSONString(textarea.value)}"
-          }, {
-              "last_line": true,
-              "role": "`;
+    body = `<|im_start|>system
+${premise}<|im_end|>
+${spans
+        .map((_) => {
+          return `<|im_start|>${escapeForJSONString(_.getAttribute("role"))}
+${escapeForJSONString(_.innerText)}<|im_end|>`
+        }).join("")}
+<|im_start|>user
+${escapeForJSONString(textarea.value)}<|im_end|>
+<|im_start|>assistant
+`;
   }
 
   try {
