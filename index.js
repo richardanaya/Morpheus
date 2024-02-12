@@ -1,6 +1,6 @@
 import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
-import { buildChatMLInput, tryParseChatML } from "./prompts/chatml.js";
+import { buildChatMLInput, tryParseChatML } from "./prompts/chatML.js";
 import {
   buildUserAssistantInput,
   tryParseUserAssistant,
