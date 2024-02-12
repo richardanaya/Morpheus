@@ -38,7 +38,6 @@ export function buildUserAssistantInput(userPremise, userInput, spans) {
 }
 
 export function tryParseUserAssistant(text) {
-  debugger;
   let parts = text.split("ASSISTANT:");
   if (parts.length < 2) {
     return;
