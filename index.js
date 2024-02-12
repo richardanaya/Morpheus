@@ -1,5 +1,12 @@
 import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
+import { buildChatMLInput, tryParseChatML } from "./chatml.js";
+
+let mode = "chatml";
+
+// get query string for mode
+const urlParams = new URLSearchParams(window.location.search);
+const modeParam = urlParams.get("mode");
 
 let lastLength = 0;
 
@@ -18,10 +25,6 @@ function deleteChatItem(e) {
   const p = e.target.parentElement;
   p.remove();
   lastLength = 0;
-}
-
-function prepareUserText(s) {
-  return s.trim();
 }
 
 const output = document.getElementById("output");
@@ -50,39 +53,8 @@ const reset = () => {
   story.focus();
 };
 
-function parseChatML(chatmlString) {
-  // Regular expression with generic role capture
-  const pattern =
-    /<\|im_start\|>(?<role>.+?)\r\n(?<content>[\s\S]+?)<\|im_end\|>/gm;
-
-  const conversation = [];
-
-  let match;
-  while ((match = pattern.exec(chatmlString)) !== null) {
-    if (match.groups.role !== "system") {
-      conversation.push({
-        role: match.groups.role,
-        content: match.groups.content,
-      });
-    }
-  }
-
-  return conversation;
-}
-
 function createChat(text) {
-  // try to finish the json first as is
-  let currentJSON = parseChatML(text);
-  // if last isn't assistant
-  if (
-    currentJSON.length > 0 &&
-    currentJSON[currentJSON.length - 1].role !== "assistant"
-  ) {
-    currentJSON = parseChatML(text + `<|im_end|>`);
-    if (currentJSON.length === 0) {
-      return;
-    }
-  }
+  const currentJSON = tryParseChatML(text);
 
   render(
     html`${currentJSON.map((line) => {
@@ -116,40 +88,10 @@ const startCompletion = async () => {
 
   const spans = Array.from(output.querySelectorAll("span"));
 
-  const premise = `${story.value}`;
-  const userText = prepareUserText(textarea.value);
-  let body = `<|im_start|>system
-${premise}<|im_end|>${
-    userText !== ""
-      ? `
-<|im_start|>user
-${userText}<|im_end|>`
-      : ""
-  }
-<|im_start|>assistant
-`;
-
-  if (spans.length > 0) {
-    body = `<|im_start|>system
-${premise}<|im_end|>
-${spans
-  .map((_) => {
-    return `<|im_start|>${prepareUserText(_.getAttribute("role"))}
-${prepareUserText(_.innerText)}<|im_end|>`;
-  })
-  .join("")}${
-      userText !== ""
-        ? `
-<|im_start|>user
-${userText}<|im_end|>`
-        : ""
-    }
-<|im_start|>assistant
-`;
-  }
+  const body = buildChatMLInput(story.value, textarea.value, spans);
 
   try {
-    const response = await fetch("/api/completion", {
+    const response = await fetch("https://192.168.86.195:8080/api/completion", {
       method: "POST",
       body,
     });
@@ -159,10 +101,10 @@ ${userText}<|im_end|>`
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder("utf-8");
 
     let firstChunk = true;
-    let accumulatedBytes = new Uint8Array(); 
+    let accumulatedBytes = new Uint8Array();
     while (true) {
       const { value, done } = await reader.read();
 
@@ -170,9 +112,7 @@ ${userText}<|im_end|>`
         break;
       }
 
-      const newBytes = new Uint8Array(
-        accumulatedBytes.length + value.length
-      );  
+      const newBytes = new Uint8Array(accumulatedBytes.length + value.length);
       newBytes.set(accumulatedBytes);
       newBytes.set(value, accumulatedBytes.length);
 
@@ -185,11 +125,11 @@ ${userText}<|im_end|>`
       }
 
       const text = decoder.decode(accumulatedBytes);
-        // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
-        // use regex to replace all instances of 3 or more newlines with 2 newlines
-        // this is a basic cleanup good for almost all use cases
-        const regex = /(\n{3,})/g;
-        createChat(text.replace(regex, "\n\n").trimStart());
+      // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
+      // use regex to replace all instances of 3 or more newlines with 2 newlines
+      // this is a basic cleanup good for almost all use cases
+      const regex = /(\n{3,})/g;
+      createChat(text.replace(regex, "\n\n").trimStart());
     }
   } catch (e) {
   } finally {
