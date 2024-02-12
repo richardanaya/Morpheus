@@ -42,7 +42,11 @@ export function tryParseUserAssistant(text) {
   if (parts.length < 2) {
     return;
   }
-  const json = parts[1].trim();
+  let json = parts[1].trim();
+
+  if (json.endsWith(`</s>`)) {
+    json = json.slice(0, -4);
+  }
 
   // try to finish the json first as is
   let currentJSON = undefined;
