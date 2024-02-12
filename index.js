@@ -1,12 +1,24 @@
 import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
-import { buildChatMLInput, tryParseChatML } from "./chatml.js";
+import { buildChatMLInput, tryParseChatML } from "./prompts/chatml.js";
+import {
+  buildUserAssistantInput,
+  tryParseUserAssistant,
+} from "./prompts/userAssistant.js";
 
 let mode = "chatml";
 
 // get query string for mode
 const urlParams = new URLSearchParams(window.location.search);
 const modeParam = urlParams.get("mode");
+
+let tryParse = tryParseChatML;
+let buildInput = buildChatMLInput;
+
+if (modeParam === "userassistant") {
+  tryParse = tryParseUserAssistant;
+  buildInput = buildUserAssistantInput;
+}
 
 let lastLength = 0;
 
@@ -54,7 +66,7 @@ const reset = () => {
 };
 
 function createChat(text) {
-  const currentJSON = tryParseChatML(text);
+  const currentJSON = tryParse(text);
 
   render(
     html`${currentJSON.map((line) => {
@@ -88,7 +100,7 @@ const startCompletion = async () => {
 
   const spans = Array.from(output.querySelectorAll("span"));
 
-  const body = buildChatMLInput(story.value, textarea.value, spans);
+  const body = buildInput(story.value, textarea.value, spans);
 
   try {
     const response = await fetch("https://192.168.86.195:8080/api/completion", {
