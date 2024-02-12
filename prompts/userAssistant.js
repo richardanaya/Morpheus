@@ -11,7 +11,7 @@ export function buildUserAssistantInput(userPremise, userInput, spans) {
   const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${userPremise}`;
   let body = `USER: ${premise}
   
-  ASSISTANT:[
+ASSISTANT:[
     {
         "role": "user",
         "content": "${escapeForJSONString(userInput)}"
@@ -22,7 +22,7 @@ export function buildUserAssistantInput(userPremise, userInput, spans) {
   if (spans.length > 0) {
     body = `USER: ${premise}
     
-    ASSISTANT:[
+ASSISTANT:[
     ${spans
       .map((_) => {
         return `{
