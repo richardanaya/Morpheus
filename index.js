@@ -108,7 +108,6 @@ const startCompletion = async () => {
 
   const body = buildInput(story.value, textarea.value, spans);
 
-
   const response = await fetch("/api/completion", {
     method: "POST",
     body,
@@ -151,14 +150,14 @@ const startCompletion = async () => {
       createChat(text.replace(regex, "\n\n").trimStart());
     } catch (e) {
       console.error("Something went wrong");
-    } finally {
-      // scroll to bottom of page when completely done and un-disable entry
-      window.scrollTo(0, document.body.scrollHeight);
-      completeButton.disabled = false;
-      completeButton.style.backgroundColor = "#fff";
-      resetButton.style.display = "block";
     }
   }
+
+  // scroll to bottom of page when completely done and un-disable entry
+  window.scrollTo(0, document.body.scrollHeight);
+  completeButton.disabled = false;
+  completeButton.style.backgroundColor = "#fff";
+  resetButton.style.display = "block";
 };
 
 story.focus();
