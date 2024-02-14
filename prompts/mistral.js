@@ -8,7 +8,9 @@ function escapeForJSONString(s) {
 }
 
 export function buildMistralInput(userPremise, userInput, spans) {
-  const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${userPremise}`;
+
+  const nextCount = spans.length + 2;
+  const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the json object with property last_line=true, there should only be ${nextCount} items in the JSON chat array. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${userPremise}`;
   let body = `<s>[INST] ${premise} [/INST][{"role": "user","content": "${escapeForJSONString(userInput)}"},{"last_line": true,"role": "`;
 
   if (spans.length > 0) {
