@@ -1,10 +1,7 @@
 import { html, render } from "./lit.js";
 var converter = new showdown.Converter();
 import { buildChatMLInput, tryParseChatML } from "./prompts/chatML.js";
-import {
-  buildUserAssistantInput,
-  tryParseUserAssistant,
-} from "./prompts/userAssistant.js";
+import { buildMistralInput, tryParseMistral } from "./prompts/mistral.js";
 
 let mode = "chatml";
 
@@ -18,6 +15,11 @@ let buildInput = buildChatMLInput;
 if (modeParam === "userassistant") {
   tryParse = tryParseUserAssistant;
   buildInput = buildUserAssistantInput;
+}
+
+if (modeParam === "mistral") {
+  tryParse = tryParseMistral;
+  buildInput = buildMistralInput;
 }
 
 let lastLength = 0;
