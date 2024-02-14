@@ -9,36 +9,20 @@ function escapeForJSONString(s) {
 
 export function buildMistralInput(userPremise, userInput, spans) {
   const premise = `This is a valid JSON representation of chat between the user representing the main character and various other characters. Be sure to escape special characters for JSON. The chat should not go beyond the element with property last_line=true or end with a user role message. The JSON role specifies the character talking, and content what they say. The text of the content should be markdown only and only use ASCII characters. The story premise is as follows: ${userPremise}`;
-  let body = `<s>[INST] ${premise} [/INST][
-    {
-        "role": "user",
-        "content": "${escapeForJSONString(userInput)}"
-    }, {
-        "last_line": true,
-        "role": "`;
+  let body = `<s>[INST] ${premise} [/INST][{"role": "user","content": "${escapeForJSONString(userInput)}"},{"last_line": true,"role": "`;
 
   if (spans.length > 0) {
-    body = `<s>[INST] ${premise} [/INST][
-    ${spans
+    body = `<s>[INST] ${premise} [/INST][${spans
       .map((_) => {
-        return `{
-        "role": "${escapeForJSONString(_.getAttribute("role"))}",
-        "content": "${escapeForJSONString(_.innerText)}"
-    }`;
+        return `{"role": "${escapeForJSONString(_.getAttribute("role"))}","content": "${escapeForJSONString(_.innerText)}"}`;
       })
-      .join(",")}, {
-        "role": "user",
-        "content": "${escapeForJSONString(userInput)}"
-    }, {
-        "last_line": true,
-        "role": "`;
+      .join(",")}, {"role":"user","content": "${escapeForJSONString(userInput)}"},{"last_line": true,"role": "`;
   }
 
   return body;
 }
 
 export function tryParseMistral(text) {
-  console.log(text);
   let parts = text.split("[/INST]");
   if (parts.length < 2) {
     return;
@@ -66,7 +50,7 @@ export function tryParseMistral(text) {
   }
 
   if (!currentJSON) {
-    return;
+    return ;
   }
 
   return currentJSON;

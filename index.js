@@ -70,6 +70,10 @@ const reset = () => {
 function createChat(text) {
   const currentJSON = tryParse(text);
 
+  if (!currentJSON) {
+    return;
+  }
+
   render(
     html`${currentJSON.map((line) => {
       let role = line.role || "...";
@@ -104,54 +108,56 @@ const startCompletion = async () => {
 
   const body = buildInput(story.value, textarea.value, spans);
 
-  try {
-    const response = await fetch("https://192.168.86.195:8080/api/completion", {
-      method: "POST",
-      body,
-    });
 
-    if (!response.body) {
-      throw new Error("ReadableStream not supported in this browser.");
+  const response = await fetch("/api/completion", {
+    method: "POST",
+    body,
+  });
+
+  if (!response.body) {
+    throw new Error("ReadableStream not supported in this browser.");
+  }
+
+  const reader = response.body.getReader();
+
+  let firstChunk = true;
+  let accumulatedBytes = new Uint8Array();
+  const decoder = new TextDecoder("utf-8");
+  while (true) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
+    const newBytes = new Uint8Array(accumulatedBytes.length + value.length);
+    newBytes.set(accumulatedBytes);
+    newBytes.set(value, accumulatedBytes.length);
 
-    let firstChunk = true;
-    let accumulatedBytes = new Uint8Array();
-    while (true) {
-      const { value, done } = await reader.read();
+    accumulatedBytes = newBytes;
 
-      if (done) {
-        break;
-      }
+    if (firstChunk) {
+      firstChunk = false;
+      textarea.value = "";
+      textarea.disabled = false;
+    }
 
-      const newBytes = new Uint8Array(accumulatedBytes.length + value.length);
-      newBytes.set(accumulatedBytes);
-      newBytes.set(value, accumulatedBytes.length);
-
-      accumulatedBytes = newBytes;
-
-      if (firstChunk) {
-        firstChunk = false;
-        textarea.value = "";
-        textarea.disabled = false;
-      }
-
-      const text = decoder.decode(accumulatedBytes);
-      // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
-      // use regex to replace all instances of 3 or more newlines with 2 newlines
-      // this is a basic cleanup good for almost all use cases
-      const regex = /(\n{3,})/g;
+    const text = decoder.decode(accumulatedBytes);
+    // make sure we never have more than 2 newlines in a row, if we do replace them with two newlines
+    // use regex to replace all instances of 3 or more newlines with 2 newlines
+    // this is a basic cleanup good for almost all use cases
+    const regex = /(\n{3,})/g;
+    try {
       createChat(text.replace(regex, "\n\n").trimStart());
+    } catch (e) {
+      console.error("Something went wrong");
+    } finally {
+      // scroll to bottom of page when completely done and un-disable entry
+      window.scrollTo(0, document.body.scrollHeight);
+      completeButton.disabled = false;
+      completeButton.style.backgroundColor = "#fff";
+      resetButton.style.display = "block";
     }
-  } catch (e) {
-  } finally {
-    // scroll to bottom of page when completely done and un-disable entry
-    window.scrollTo(0, document.body.scrollHeight);
-    completeButton.disabled = false;
-    completeButton.style.backgroundColor = "#fff";
-    resetButton.style.display = "block";
   }
 };
 
