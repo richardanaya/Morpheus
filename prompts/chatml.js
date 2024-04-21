@@ -74,7 +74,8 @@ ${userText}<|im_end|>`
 ${premise}<|im_end|>
 ${spans
   .map((_) => {
-    return `<|im_start|>${prepareUserText(_.getAttribute("role"))}
+    return `
+<|im_start|>${prepareUserText(_.getAttribute("role"))}
 ${prepareUserText(_.innerText)}<|im_end|>`;
   })
   .join("")}${
