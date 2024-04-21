@@ -59,33 +59,33 @@ export function buildChatMLInput(userPremise, userInput, spans) {
   const premise = `${userPremise}`;
   const userText = prepareUserText(userInput);
   let body = `<|im_start|>system
-  ${premise}<|im_end|>${
+${premise}<|im_end|>${
     userText !== ""
       ? `
-  <|im_start|>user
-  ${userText}<|im_end|>`
+<|im_start|>user
+${userText}<|im_end|>`
       : ""
   }
-  <|im_start|>assistant
-  `;
+<|im_start|>assistant
+`;
 
   if (spans.length > 0) {
     body = `<|im_start|>system
-  ${premise}<|im_end|>
-  ${spans
-    .map((_) => {
-      return `<|im_start|>${prepareUserText(_.getAttribute("role"))}
-  ${prepareUserText(_.innerText)}<|im_end|>`;
-    })
-    .join("")}${
+${premise}<|im_end|>
+${spans
+  .map((_) => {
+    return `<|im_start|>${prepareUserText(_.getAttribute("role"))}
+${prepareUserText(_.innerText)}<|im_end|>`;
+  })
+  .join("")}${
       userText !== ""
         ? `
-  <|im_start|>user
-  ${userText}<|im_end|>`
+<|im_start|>user
+${userText}<|im_end|>`
         : ""
     }
-  <|im_start|>assistant
-  `;
+<|im_start|>assistant
+`;
   }
 
   // make sure all lines don't have any empty space at beginning without regex
