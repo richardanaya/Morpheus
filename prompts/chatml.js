@@ -3,8 +3,8 @@ function prepareUserText(s) {
 }
 
 export function parseChatML(chatmlString) {
-  const asLines = chatmlString.split("\n");
-  if (asLines.length > 0 && asLines === "system") {
+  const asLines = chatmlString.split("\n\r");
+  if (asLines.length > 0 && asLines[0] === "system") {
     const roles = asLines.filter((_, i) => i % 2 === 0);
     const contents = asLines.filter((_, i) => i % 2 === 1);
 
