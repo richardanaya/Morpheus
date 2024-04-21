@@ -70,5 +70,12 @@ export function buildChatMLInput(userPremise, userInput, spans) {
   <|im_start|>assistant
   `;
   }
+
+  // make sure all lines don't have any empty space at beginning without regex
+  body = body
+    .split("\n")
+    .map((_) => _.trim())
+    .join("\n");
+
   return body;
 }
