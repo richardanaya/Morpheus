@@ -3,6 +3,19 @@ function prepareUserText(s) {
 }
 
 export function parseChatML(chatmlString) {
+  const asLines = chatmlString.split("\n");
+  if (asLines.length > 0 && asLines === "system") {
+    const roles = asLines.filter((_, i) => i % 2 === 0);
+    const contents = asLines.filter((_, i) => i % 2 === 1);
+
+    return roles.map((role, i) => {
+      return {
+        role,
+        content: contents[i] || "",
+      };
+    });
+  }
+
   // Regular expression with generic role capture
   const pattern =
     /<\|im_start\|>(?<role>.+?)\r\n(?<content>[\s\S]+?)<\|im_end\|>/gm;
