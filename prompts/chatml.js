@@ -71,14 +71,13 @@ ${userText}<|im_end|>`
 
   if (spans.length > 0) {
     body = `<|im_start|>system
-${premise}<|im_end|>
-${spans
-  .map((_) => {
-    return `
+${premise}<|im_end|>${spans
+      .map((_) => {
+        return `
 <|im_start|>${prepareUserText(_.getAttribute("role"))}
 ${prepareUserText(_.innerText)}<|im_end|>`;
-  })
-  .join("")}${
+      })
+      .join("")}${
       userText !== ""
         ? `
 <|im_start|>user
